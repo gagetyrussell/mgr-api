@@ -1,0 +1,22 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.7
+    commands:
+      - echo setting up python env
+      - pip install --upgrade pip
+      - pip3 install -r requirements.txt
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building and running tests
+      - pip install zappa
+      - zappa update dev
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - ls
+      - echo Starting deployment
+      - echo Deployment completed
