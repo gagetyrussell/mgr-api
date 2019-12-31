@@ -1,0 +1,33 @@
+getUsers: |
+  select
+    *
+  from
+    metadb.users u
+
+createUser: |
+  INSERT INTO metadb.users (
+    first_name,
+    last_name,
+    email
+  )
+  VALUES (
+  '{{ first_name }}',
+  '{{ last_name }}',
+  '{{ email }}'
+  )
+
+cognitoUserToRDS: |
+  INSERT INTO metadb.cognitoUsers (
+    email,
+    email_verified,
+    datestamp,
+    user_pool_id,
+    user_id
+  )
+  VALUES (
+  '{{ email }}',
+  '{{ email_verified }}',
+  '{{ datestamp }}',
+  '{{ user_pool_id }}',
+  '{{ user_id }}'
+  )
