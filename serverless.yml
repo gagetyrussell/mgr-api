@@ -10,6 +10,7 @@ custom:
   wsgi:
     app: app.app
     packRequirements: false
+    cors: true
   pythonRequirements:
     dockerizePip: non-linux
 

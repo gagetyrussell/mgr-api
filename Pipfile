@@ -12,6 +12,7 @@ flask = "*"
 python-dotenv = "*"
 pybars3 = "*"
 mysql-connector-python = "*"
+flask-cors = "*"
 
 [requires]
 python_version = "3.7"

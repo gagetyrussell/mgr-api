@@ -5,6 +5,8 @@ import os
 import logging
 from dotenv import load_dotenv, find_dotenv
 from datetime import datetime
+from flask_cors import CORS
+
 
 from Mysql import MysqlDatabase
 from S3 import create_bucket, add_user_key, create_presigned_post
@@ -30,6 +32,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route("/test")
 def hello():
