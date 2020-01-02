@@ -6,6 +6,7 @@ import logging
 from dotenv import load_dotenv, find_dotenv
 from datetime import datetime
 from flask_cors import CORS
+import re
 
 
 from Mysql import MysqlDatabase
@@ -101,7 +102,8 @@ def getPresignedUserDataUrl():
     timestamp = datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
     s3_name = data['file_name'].split('.')[0] + timestamp
     s3_name = s3_name.replace(' ', '_')
-    s3_name = data['user_id'] + '/' + s3_name
+    s3_name = data['user_id'] + '/' + s3_name + '.' + data['file_name'].split('.')[1]
+    print(s3_name)
 
     post_url = create_presigned_post('mgr.users.data', s3_name)
     print(post_url)
@@ -113,11 +115,12 @@ def getDataByUser():
     'user_id': request.args.get('user_id'),
     }
     valid, fields = Validate.validateRequestData(data, required_fields=['user_id'])
-    print(data)
     bucket_name = 'mgr.users.data'
     user_id = data['user_id'] + '/'
     rsp = list_bucket_objects(bucket_name=bucket_name, prefix=user_id)
-    objects = [{'key':x['Key'], 'size':x['Size'], 'mod':x['LastModified']} for x in rsp['Contents']]
+    reg='\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}'
+
+    objects = [{'key':''.join(re.split(reg, x['Key'].split('/')[1])), 'size':x['Size'], 'mod':x['LastModified']} for x in rsp['Contents']]
 
     return Response.jsonResponse(objects)
 
