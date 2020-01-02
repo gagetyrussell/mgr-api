@@ -9,7 +9,7 @@ from flask_cors import CORS
 
 
 from Mysql import MysqlDatabase
-from S3 import create_bucket, add_user_key, create_presigned_post
+from S3 import create_bucket, add_user_key, create_presigned_post, list_bucket_objects
 from flask import json as flask_json
 from Util import Response, Validate
 
@@ -95,6 +95,7 @@ def getPresignedUserDataUrl():
     'user_id': request.args.get('user_id'),
     'file_name': request.args.get('file_name')
     }
+    valid, fields = Validate.validateRequestData(data, required_fields=['user_id', 'file_name'])
 
     bucket_name = 'mgr.users.data'
     timestamp = datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
@@ -105,6 +106,20 @@ def getPresignedUserDataUrl():
     post_url = create_presigned_post('mgr.users.data', s3_name)
     print(post_url)
     return Response.jsonResponse(post_url)
+
+@app.route('/getDataByUser', methods=["GET"])
+def getDataByUser():
+    data = {
+    'user_id': request.args.get('user_id'),
+    }
+    valid, fields = Validate.validateRequestData(data, required_fields=['user_id'])
+    print(data)
+    bucket_name = 'mgr.users.data'
+    user_id = data['user_id'] + '/'
+    rsp = list_bucket_objects(bucket_name=bucket_name, prefix=user_id)
+    objects = [{'key':x['Key'], 'size':x['Size'], 'mod':x['LastModified']} for x in rsp['Contents']]
+
+    return Response.jsonResponse(objects)
 
 # include this for local dev
 
