@@ -138,7 +138,35 @@ def listDataByUser():
 
     return Response.jsonResponse(objects)
 
+@app.route('/getPresignedUserChartUrl', methods=["GET"])
+def getPresignedUserChartUrl():
+    print("herererererereerer")
+    data = {
+    'user_id': request.args.get('user_id'),
+    'file_name': request.args.get('file_name')
+    }
+    valid, fields = Validate.validateRequestData(data, required_fields=['user_id', 'file_name'])
+
+    bucket_name = 'mgr.users.data'
+    prefix = 'charts'
+    timestamp = datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
+    print(data)
+    if "." in data['file_name']:
+        s3_name = data['file_name'].split('.')[0] + timestamp
+        s3_name = s3_name.replace(' ', '_')
+        s3_name = data['user_id'] + '/' + prefix +'/' + s3_name + '.' + data['file_name'].split('.')[1]
+    else:
+        s3_name = data['file_name'] + timestamp
+        s3_name = s3_name.replace(' ', '_')
+        s3_name = data['user_id'] + '/' + prefix +'/' + s3_name + '.json'
+
+    print(s3_name)
+
+    post_url = create_presigned_post('mgr.users.data', s3_name)
+    print(post_url)
+    return Response.jsonResponse(post_url)
+
 # include this for local dev
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
