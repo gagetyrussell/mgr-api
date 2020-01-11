@@ -124,6 +124,20 @@ def getDataByUser():
 
     return Response.jsonResponse(objects)
 
+@app.route('/listDataByUser', methods=["GET"])
+def listDataByUser():
+    data = {
+    'user_id': request.args.get('user_id'),
+    }
+    valid, fields = Validate.validateRequestData(data, required_fields=['user_id', 'key'])
+    bucket_name = 'mgr.users.data'
+    prefix = data['user_id'] + '/'
+    rsp = list_bucket_objects(bucket_name=bucket_name, prefix=prefix)
+
+    objects = [{'key': x['Key'].split('/')[1], 'size':x['Size'], 'mod':x['LastModified']} for x in rsp['Contents']]
+
+    return Response.jsonResponse(objects)
+
 # include this for local dev
 
 if __name__ == '__main__':
