@@ -71,7 +71,32 @@ def create_presigned_post(bucket_name, object_name,
     # The response contains the presigned URL and required fields
     return response
 
-def list_bucket_objects(bucket_name, prefix):
+def sanitize_object_key(obj):
+    """Replace character encodings with actual characters."""
+    new_key = unquote(unquote(obj))
+    return new_key
+
+def list_bucket_objects_v2(bucket_name, prefix=None, start_after=None):
+
+    # Generate a presigned S3 POST URL
+    s3_client = boto3.client('s3')
+    try:
+        response = s3_client.list_objects_v2(
+            Bucket=bucket_name,
+            Prefix=prefix
+        )
+        objects = [{'key': x['Key'], 'size': x['Size'], 'mod': x['LastModified']} for x in
+                   response['Contents']]
+        print('objects:',objects)
+        print('response:',response)
+    except ClientError as e:
+        logging.error(e)
+        return None
+
+    # The response contains the presigned URL and required fields
+    return objects
+
+def list_bucket_objects(bucket_name, prefix=None, start_after=None):
 
         # Generate a presigned S3 POST URL
         s3_client = boto3.client('s3')

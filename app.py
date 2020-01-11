@@ -10,7 +10,7 @@ import re
 
 
 from Mysql import MysqlDatabase
-from S3 import create_bucket, add_user_key, create_presigned_post, list_bucket_objects
+from S3 import create_bucket, add_user_key, create_presigned_post, list_bucket_objects, list_bucket_objects_v2
 from flask import json as flask_json
 from Util import Response, Validate
 
@@ -140,7 +140,6 @@ def listDataByUser():
 
 @app.route('/getPresignedUserChartUrl', methods=["GET"])
 def getPresignedUserChartUrl():
-    print("herererererereerer")
     data = {
     'user_id': request.args.get('user_id'),
     'file_name': request.args.get('file_name')
@@ -150,7 +149,6 @@ def getPresignedUserChartUrl():
     bucket_name = 'mgr.users.data'
     prefix = 'charts'
     timestamp = datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
-    print(data)
     if "." in data['file_name']:
         s3_name = data['file_name'].split('.')[0] + timestamp
         s3_name = s3_name.replace(' ', '_')
@@ -165,6 +163,19 @@ def getPresignedUserChartUrl():
     post_url = create_presigned_post('mgr.users.data', s3_name)
     print(post_url)
     return Response.jsonResponse(post_url)
+@app.route('/getChartsByUser', methods=["GET"])
+def getChartsByUser():
+    data = {
+    'user_id': request.args.get('user_id'),
+    }
+    valid, fields = Validate.validateRequestData(data, required_fields=['user_id'])
+    bucket_name = 'mgr.users.data'
+    user_id = data['user_id'] + '/charts/'
+    rsp = list_bucket_objects_v2(bucket_name=bucket_name, prefix=user_id)
+
+    # objects = [{'key': x['Key'].split('/')[1], 'size':x['Size'], 'mod':x['LastModified']} for x in rsp['Contents']]
+    # print(objects)
+    return Response.jsonResponse(rsp)
 
 # include this for local dev
 
