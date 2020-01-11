@@ -71,7 +71,32 @@ def create_presigned_post(bucket_name, object_name,
     # The response contains the presigned URL and required fields
     return response
 
-def list_bucket_objects(bucket_name, prefix):
+def sanitize_object_key(obj):
+    """Replace character encodings with actual characters."""
+    new_key = unquote(unquote(obj))
+    return new_key
+
+def list_bucket_objects_v2(bucket_name, prefix=None, start_after=None):
+
+    # Generate a presigned S3 POST URL
+    s3_client = boto3.client('s3')
+    try:
+        response = s3_client.list_objects_v2(
+            Bucket=bucket_name,
+            Prefix=prefix
+        )
+        objects = [{'key': x['Key'], 'size': x['Size'], 'mod': x['LastModified']} for x in
+                   response['Contents']]
+        print('objects:',objects)
+        print('response:',response)
+    except ClientError as e:
+        logging.error(e)
+        return None
+
+    # The response contains the presigned URL and required fields
+    return objects
+
+def list_bucket_objects(bucket_name, prefix=None):
 
         # Generate a presigned S3 POST URL
         s3_client = boto3.client('s3')
@@ -87,3 +112,59 @@ def list_bucket_objects(bucket_name, prefix):
 
         # The response contains the presigned URL and required fields
         return response
+
+def get_matching_s3_keys(bucket, prefix='', suffix=''):
+    """
+    Generate the keys in an S3 bucket.
+
+    :param bucket: Name of the S3 bucket.
+    :param prefix: Only fetch keys that start with this prefix (optional).
+    :param suffix: Only fetch keys that end with this suffix (optional).
+    """
+    s3 = boto3.client('s3')
+    kwargs = {'Bucket': bucket}
+
+    # If the prefix is a single string (not a tuple of strings), we can
+    # do the filtering directly in the S3 API.
+    if isinstance(prefix, str):
+        kwargs['Prefix'] = prefix
+
+    while True:
+
+        # The S3 API response is a large blob of metadata.
+        # 'Contents' contains information about the listed objects.
+        resp = s3.list_objects_v2(
+            Bucket=bucket,
+            Prefix=prefix
+        )
+        for obj in resp['Contents']:
+            key = obj['Key']
+            if key.startswith(prefix) and key.endswith(suffix):
+                yield {'key':key, 'mod':obj['LastModified'], 'size':obj['Size']}
+
+        # The S3 API is paginated, returning up to 1000 keys at a time.
+        # Pass the continuation token into the next response, until we
+        # reach the final page (when this field is missing).
+        try:
+            kwargs['ContinuationToken'] = resp['NextContinuationToken']
+        except KeyError:
+            break
+
+def get_json_object(bucket_name, object_name):
+    """Retrieve an object from an Amazon S3 bucket
+
+    :param bucket_name: string
+    :param object_name: string
+    :return: botocore.response.StreamingBody object. If error, return None.
+    """
+
+    # Retrieve the object
+    s3 = boto3.client('s3')
+    try:
+        response = s3.get_object(Bucket=bucket_name, Key=object_name)
+    except ClientError as e:
+        # AllAccessDisabled error == bucket or object not found
+        logging.error(e)
+        return None
+    # Return an open StreamingBody object
+    return response['Body']
