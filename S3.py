@@ -75,10 +75,11 @@ def list_bucket_objects(bucket_name, prefix):
 
         # Generate a presigned S3 POST URL
         s3_client = boto3.client('s3')
+        print(bucket_name,prefix)
         try:
             response = s3_client.list_objects_v2(
                 Bucket=bucket_name,
-                StartAfter=prefix
+                Prefix=prefix
             )
         except ClientError as e:
             logging.error(e)
