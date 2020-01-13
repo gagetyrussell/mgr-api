@@ -8,10 +8,12 @@ from datetime import datetime
 from flask_cors import CORS
 import re
 import json
+import io
+import pandas as pd
 
 
 from Mysql import MysqlDatabase
-from S3 import get_json_object, get_matching_s3_keys, create_bucket, add_user_key, create_presigned_post, list_bucket_objects, list_bucket_objects_v2
+from S3 import get_object, get_json_object, get_matching_s3_keys, create_bucket, add_user_key, create_presigned_post, list_bucket_objects, list_bucket_objects_v2
 from flask import json as flask_json
 from Util import Response, Validate
 
@@ -200,6 +202,23 @@ def getSavedChartJson():
     jsonObj = json.loads(text)
     jsonObj['data'] = [jsonObj['data'][i] for i in jsonObj['data']]
     return Response.jsonResponse(text)
+
+@app.route('/parseDataFromFile', methods=["GET"])
+def parseDataFromFile():
+    data = {
+    'file_key': request.args.get('file_key'),
+    }
+    valid, fields = Validate.validateRequestData(data, required_fields=['file_key'])
+    bucket_name = 'mgr.users.data'
+    stream = get_object(bucket_name, data['file_key'])
+    if data['file_key'].endswith('.csv'):
+        df = pd.read_csv(io.BytesIO(stream.read()))
+    elif data['file_key'].endswith('.xlsx'):
+        df = pd.read_excel(io.BytesIO(stream.read()))
+        print(df)
+
+    json_df=df.to_dict(orient='list')
+    return Response.jsonResponse(json_df)
 
 # include this for local dev
 
